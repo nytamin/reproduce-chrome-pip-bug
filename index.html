@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+	<body>
+		<div id="container">
+            <div id="content">
+                <div>
+                    <h1>Directly referenced content:</h1>
+                    <div>
+
+                        <img src="thumbs-up.jpg" />
+                        <iframe src="iframe.html" ></iframe>
+                    </div>
+                </div>
+                <div>
+                    <h1>Indirectly referenced content:</h1>
+                    <div>
+                        (This content is piped via the service worker)
+                    </div>
+                    <div>
+                        <img src="to-be-replaced-thumbs-up.jpg" />
+                        <iframe src="to-be-replaced-iframe.html" ></iframe>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button onClick="activatePip()">Click me to activate PiP!</button>
+		<script >
+
+            const elContainer = document.getElementById('container')
+            const elContent = document.getElementById('content')
+
+            async function init() {
+
+                // Register the service worker:
+                if ('serviceWorker' in navigator) {
+
+                    const registration = await navigator.serviceWorker.getRegistration('sw.js')
+                    if (!registration) {
+                        console.log('Registering new Service Worker...')
+
+                        navigator.serviceWorker.register('sw.js')
+                            .then((registration) => {
+                                console.log('Service Worker registered with scope:', registration.scope)
+                                console.log('PLEASE RELOAD YOUR BROWSER TO SEE THE EFFECTS OF THE SERVICE WORKER')
+                            })
+                            .catch((error) => {
+                                console.error('Service Worker registration failed:', error)
+                            })
+                    }
+
+                } else {
+                    console.error('Service Worker is not supported in this browser.')
+                }
+            }
+
+
+            function activatePip() {
+                console.log('activating PiP...')
+
+                // Early return if there's already a Picture-in-Picture window open
+                if (window.documentPictureInPicture.window) return
+
+                window.documentPictureInPicture
+                .requestWindow({
+                    width: 300,
+                    height: 200,
+                })
+                .then((pipWindow) => {
+                    // Move the content element to the Picture-in-Picture window.
+
+                    pipWindow.document.body.append(content)
+
+                    pipWindow.addEventListener('pagehide', (event) => {
+                        // Reattach the content element to the main DOM:
+                        elContainer.append(elContent)
+                    })
+                })
+                .catch(console.error)
+
+            }
+
+            init().catch(console.error)
+
+
+
+        </script>
+	</body>
+</html>
